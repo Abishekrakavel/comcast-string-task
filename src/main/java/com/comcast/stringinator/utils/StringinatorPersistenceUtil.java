@@ -9,9 +9,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Component
 public class StringinatorPersistenceUtil {
 
+    private static final Logger log = LoggerFactory.getLogger(StringinatorPersistenceUtil.class);
     private static final String FILE_PATH = "seenStrings.json";
     private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -19,14 +23,32 @@ public class StringinatorPersistenceUtil {
                                           String mostPopularString,
                                           int mostPopularStringCount,
                                           String longestInput) throws IOException {
+        log.info("Persisting state to file: {}", FILE_PATH);
         StateData stateData = new StateData(seenStrings, mostPopularString, mostPopularStringCount, longestInput);
-        mapper.writeValue(new File(FILE_PATH), stateData);
+        try {
+            mapper.writeValue(new File(FILE_PATH), stateData);
+            log.info("Successfully wrote state to file.");
+        } catch (IOException e) {
+            log.error("Failed to write state to file: {}", FILE_PATH);
+            throw e;
+        }
     }
 
     public static StateData loadStateFromFile() throws IOException {
         File file = new File(FILE_PATH);
-        if (!file.exists()) return new StateData(); // Return empty if file doesn't exist
-        return mapper.readValue(file, StateData.class);
+        if (!file.exists()) {
+            log.warn("State file not found: {}. Returning new empty state.", FILE_PATH);
+            return new StateData();
+        }
+
+        try {
+            StateData stateData = mapper.readValue(file, StateData.class);
+            log.info("Successfully loaded state from file: {}", FILE_PATH);
+            return stateData;
+        } catch (IOException e) {
+            log.error("Failed to load state from file: {}", FILE_PATH);
+            throw e;
+        }
     }
 
     public static class StateData {

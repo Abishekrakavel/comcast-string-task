@@ -1,6 +1,10 @@
 package com.comcast.stringinator.model;
 
+import javax.validation.constraints.NotBlank;
+
 public class StringinatorInput {
+
+    @NotBlank(message = "Input string must not be blank")
     private String input;
 
     public StringinatorInput() {

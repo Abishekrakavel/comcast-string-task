@@ -11,7 +11,6 @@ public class RateLimiterConfig {
 
     @Bean
     public RateLimiterRegistry rateLimiterRegistry() {
-        // Create a default RateLimiterRegistry with default configuration
         return RateLimiterRegistry.ofDefaults();
     }
 
@@ -19,7 +18,7 @@ public class RateLimiterConfig {
     public FilterRegistrationBean<RateLimiterFilter> rateLimiterFilter(RateLimiterRegistry rateLimiterRegistry) {
         FilterRegistrationBean<RateLimiterFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(new RateLimiterFilter(rateLimiterRegistry));
-        registrationBean.addUrlPatterns("/*"); // You can apply it to specific URL patterns
+        registrationBean.addUrlPatterns("/*");
         return registrationBean;
     }
 }

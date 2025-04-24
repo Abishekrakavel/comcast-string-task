@@ -3,7 +3,7 @@ package com.comcast.stringinator.utils;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -13,13 +13,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class RateLimiterFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(RateLimiterFilter.class);
     private final RateLimiterRegistry rateLimiterRegistry;
 
-    // Constructor injection of RateLimiterRegistry
     public RateLimiterFilter(RateLimiterRegistry rateLimiterRegistry) {
         this.rateLimiterRegistry = rateLimiterRegistry;
     }
@@ -31,7 +33,8 @@ public class RateLimiterFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        String clientIp = request.getRemoteAddr();  // Get the client's IP address
+        String clientIp = request.getRemoteAddr();
+        log.debug("Incoming request from IP: {}", clientIp);
 
         RateLimiterConfig config = RateLimiterConfig.custom()
                 .limitForPeriod(5)
@@ -40,17 +43,17 @@ public class RateLimiterFilter extends OncePerRequestFilter {
                 .build();
 
         RateLimiter rateLimiter = rateLimiterRegistry.rateLimiter(clientIp, config);
-        // Get or create a rate limiter instance for the specific IP
-//        RateLimiter rateLimiter = rateLimiterRegistry.rateLimiter(clientIp);
 
-        // Check if permission is granted to the IP for the request
-        boolean permissionGranted = rateLimiter.acquirePermission();  // getPermission() returns true if permission is granted
+        boolean permissionGranted = rateLimiter.acquirePermission();
 
         if (permissionGranted) {
-            filterChain.doFilter(request, response);  // Proceed with the request
+            log.debug("Permission granted for IP: {}", clientIp);
+            filterChain.doFilter(request, response);
         } else {
-            response.setStatus(429);  // Too Many Requests
-            response.getWriter().write("Rate limit exceeded for IP: " + clientIp);
+            log.warn("Rate limit exceeded for IP: {}", clientIp);
+            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Too Many Requests\", \"message\": \"Rate limit exceeded for IP: " + clientIp + "\"}");
         }
     }
 }
