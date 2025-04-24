@@ -1,25 +1,45 @@
 package com.comcast.stringinator.service;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
+import com.comcast.stringinator.utils.StringDataStore;
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.comcast.stringinator.model.StatsResult;
 import com.comcast.stringinator.model.StringinatorInput;
 import com.comcast.stringinator.model.StringinatorResult;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 @Service
 public class StringinatorServiceImpl implements StringinatorService {
+
+    @Autowired
+    private StringDataStore stringDataStore;
 
     private final Map<String, AtomicInteger> seenStrings = new ConcurrentHashMap<>();
     private volatile String mostPopularString = null;
     private volatile int mostPopularStringCount = 0;
     private volatile String longestInput = null;
+
+    @PostConstruct
+    public void init() throws IOException {
+        seenStrings.putAll(stringDataStore.loadFromFile());
+    }
+
+    @PreDestroy
+    public void shutdown() throws IOException {
+        stringDataStore.saveToFile(seenStrings);
+    }
 
     @Override
     public StringinatorResult stringinate(StringinatorInput input) {
