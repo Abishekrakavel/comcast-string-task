@@ -5,7 +5,11 @@ import com.comcast.stringinator.model.StringinatorInput;
 import com.comcast.stringinator.model.StringinatorResult;
 import com.comcast.stringinator.service.StringinatorService;
 
+import com.comcast.stringinator.utils.RateLimiterFilter;
+import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,6 +21,9 @@ public class StringinatorController {
 
     @Autowired
     private StringinatorService stringinatorService;
+
+//    @Autowired
+//    private RateLimiterRegistry rateLimiterRegistry;
 
     @GetMapping("/")
 	public String index() {
@@ -30,6 +37,10 @@ public class StringinatorController {
 
     @GetMapping(path = "/stringinate", produces = "application/json")
     public StringinatorResult stringinateGet(@RequestParam(name = "input", required = true) String input) {
+        // testing rateLimiterRegistry is not null
+//        if (rateLimiterRegistry == null) {
+//            System.out.println("Rate Limiter is not initialized");
+//        }
         StringinatorResult result = stringinatorService.stringinate(new StringinatorInput(input));
         return result;
     }
